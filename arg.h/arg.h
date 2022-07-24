@@ -11,9 +11,9 @@
 #ifndef ARG_H
 #define ARG_H
 
-#include <list>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 /**
  * @brief Use this class to parse command line arguments.
@@ -72,12 +72,12 @@
  *       * In GNU style, an option and its argument may or may not appear
  *         as separate tokens.
  *         (In other words, the whitespace separating them is optional.)
- *         Thus, `-o foo` and `-ofoo` are equivalent.
+ *         Thus, `-t ar` and `-tar` are equivalent.
  *
  *         In argh, an option and its argument must appear as separate tokens.
  *         (In other words, the whitespace separating them is required.)
- *         Thus, `-ofoo` would be interpreted as `-o -f -o -o`,
- *         even if `-o` requires an argument.
+ *         Thus, `-tar` would be interpreted as `-t -a -r`,
+ *         even if `-t` requires an argument.
  *
  *       * Some GNU programs require options to precede other arguments.
  *
@@ -101,7 +101,7 @@
  *                return 0;
  *            }
  *
- *            int verbosity_level = args["-v"] + args["--verbose"];
+ *            unsigned int verbosity_level = args["-v"] + args["--verbose"];
  *
  *     3. Access an option's value using the operator() with a string.
  *
@@ -115,8 +115,8 @@
  *
  *        Note: argh can't on its own determine whether an argument belongs to
  *            an option or not.
- *            (E.g., should `file.txt` belong to `-q` or not in
- *            `program -q file.txt`?)
+ *            (E.g., in `program -q file.txt`,
+ *            should `file.txt` belong to `-q` or not?)
  *            Thus, it initially assumes that all arguments do not belong to
  *            an option.
  *
@@ -134,12 +134,18 @@
 class argh {
    public:
     /**
-     * @brief Construct a new argh object.
+     * @brief Constructs a new argh object.
      *
      * @param argc The count of arguments.
      * @param argv The argument array.
      */
     argh(int argc, char **argv);
+
+    /**
+     * @brief Destroys the argh object.
+     *
+     */
+    ~argh();
 
     /**
      * @brief Tells argh that the given option requires an argument.
@@ -185,34 +191,17 @@ class argh {
 
    private:
     /**
-     * @brief Represents a single argument.
-     *
-     */
-    struct argument {
-        std::string name;
-        unsigned int id{};
-        bool is_option = false;
-        bool has_value = false;
-        std::string value;
-    };
-
-    /**
      * @brief The list of arguments.
      *
      */
-    std::list<argument> _arguments;
+    std::vector<std::string> _arguments;
 
     /**
      * @brief The list of non-option arguments.
+     * @details Holds the indices of the arguments in the `_arguments` vector.
      *
      */
-    std::list<argument> _non_option_arguments;
-
-    /**
-     * @brief A mapping of option names to the number of times they occur.
-     *
-     */
-    std::unordered_map<std::string, unsigned int> _option_counts;
+    std::vector<unsigned int> _non_option_arguments;
 };
 
 argh::argh(int argc, char **argv) {
