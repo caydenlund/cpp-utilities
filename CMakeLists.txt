@@ -7,7 +7,7 @@ include_directories(.)
 #include_directories(arg.h)
 #include_directories(assertions.h)
 include_directories(convert)
-#include_directories(fff)
+include_directories(fff)
 #include_directories(huge.h)
 
 
@@ -46,7 +46,7 @@ add_executable(convert_octal_to_hex convert/octal_to_hex.cpp convert/convert.cpp
 #  ||  fff  ||
 #  \\=======//
 
-#add_executable(fff fff/fff.cpp)
+add_executable(fff fff/fff.cpp)
 
 
 #  //==========\\
