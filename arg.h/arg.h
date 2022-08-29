@@ -2,10 +2,9 @@
  * @file arg.h
  * @author Cayden Lund (cayden.lund@utah.edu)
  * @brief The header-only library to parse command line arguments.
- * @version 3.0
+ * @date 27 August 2022
  *
- * @copyright Copyright (c) 2022 Cayden Lund
- *
+ * @copyright Copyright (c) 2022 by Cayden Lund
  */
 
 #ifndef ARG_H
@@ -13,7 +12,12 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
+
+//  //=====================\\
+//  ||  Class definitions  ||
+//  \\=====================//
 
 /**
  * @brief Use this class to parse command line arguments.
@@ -129,23 +133,25 @@
  *
  *            args.accepts_argument("-o");
  *
- * TODO: Const references.
  */
 class argh {
    public:
+    /**
+     * @brief Constructs a new argh object.
+     * @details Forwards a const-qualified argv array to the other constructor.
+     *
+     * @param argc The count of arguments.
+     * @param argv The argument array.
+     */
+    argh(int argc, char **argv) : argh(argc, (char const **)argv) {}
+
     /**
      * @brief Constructs a new argh object.
      *
      * @param argc The count of arguments.
      * @param argv The argument array.
      */
-    argh(int argc, char **argv);
-
-    /**
-     * @brief Destroys the argh object.
-     *
-     */
-    ~argh();
+    argh(int argc, char const **argv);
 
     /**
      * @brief Tells argh that the given option requires an argument.
@@ -162,11 +168,23 @@ class argh {
      *             Leading dashes are required.
      * @return The number of times the option occurs.
      */
-    unsigned int operator[](const std::string &name);
+    size_t operator[](const std::string &name) const;
 
     /**
      * @brief Reports the (argument) value of the given option
      *     and tells argh that the option accepts an argument.
+     * @details Example:
+     *
+     *     // Program executed as "find / -name fff".
+     *     argh args(argc, argv);
+     *
+     *     args["fff"];  // Returns 1.
+     *     args::size();  // Returns 3.
+     *
+     *     args("-name");  // Returns "fff".
+     *
+     *     args["fff"];  // Returns 0.
+     *     args::size();  // Returns 2.
      *
      * @param name The option to get the value of.
      *             Leading dashes are required.
@@ -180,176 +198,141 @@ class argh {
      * @param index The index of the argument.
      * @return The value of the argument.
      */
-    std::string operator[](unsigned int index);
+    std::string operator[](size_t index) const;
 
     /**
      * @brief Returns the number of non-option arguments.
+     * @details Includes the program name.
      *
      * @return The number of non-option arguments.
      */
-    unsigned int size();
+    size_t size() const;
 
    private:
     /**
-     * @brief The list of arguments.
+     * @brief A mapping of option arguments to their corresponding values.
      *
+     * @tparam std::string The name of the option argument.
+     * @tparam size_t The unique ID of the option argument's value.
      */
-    std::vector<std::string> _arguments;
+    std::unordered_map<std::string, size_t> _option_value;
+
+    /**
+     * @brief A mapping of option arguments to the count of occurrences of
+     *     that option.
+     * @details (An option is an argument with a leading dash, not including
+     *     the arguments "-" and "--".)
+     *
+     * @tparam std::string The name of the option argument.
+     * @tparam size_t The number of times the option appears.
+     */
+    std::unordered_map<std::string, size_t> _option_count;
+
+    /**
+     * @brief A set of all options that accept arguments.
+     *
+     * @tparam std::string The name of the option argument.
+     */
+    std::unordered_set<std::string> _accepts_arguments;
 
     /**
      * @brief The list of non-option arguments.
-     * @details Holds the indices of the arguments in the `_arguments` vector.
      *
+     * @tparam size_t The unique ID of the argument.
      */
-    std::vector<unsigned int> _non_option_arguments;
+    std::vector<size_t> _non_option_arguments;
+
+    /**
+     * @brief The list of all arguments.
+     * @details The index of an argument in this list is its unique ID, used by
+     *     the `_non_option_arguments` and other lists.
+     *
+     * @tparam std::string The name of the argument.
+     */
+    std::vector<std::string> _all_arguments;
 };
 
-argh::argh(int argc, char **argv) {
-    unsigned int id = 0;
+//  //========================\\
+//  ||  argh: public methods  ||
+//  \\========================//
 
-    // Iterate through the arguments.
-    for (int i = 0; i < argc; i++) {
-        // Get the argument.
-        argument arg;
-        arg.name = argv[i];
-        arg.id = id++;
+argh::argh(int argc, char const **argv) {
+    for (size_t id = 0; id < argc; id++) {
+        std::string argument(argv[id]);
+        this->_all_arguments.emplace_back(argument);
+        this->_option_count[argument]++;
 
-        // Check whether the argument is just "-" or "--".
-        if (arg.name == "-" || arg.name == "--") {
-            // This is a non-option argument.
-            _arguments.push_back(arg);
-            _non_option_arguments.push_back(arg);
-            continue;
-        }
+        bool is_option = (!argument.empty() && argument[0] == '-' &&
+                          argument != "-" && argument != "--");
 
-        // Check whether the argument starts with "-".
-        if (arg.name[0] == '-') {
-            // If so, it is an option.
-            arg.is_option = true;
-
-            // Check whether the argument is a long option.
-            if (arg.name[1] == '-') {
-                // Check whether the string contains "=".
-                size_t equals_index = arg.name.find('=');
-                if (equals_index != std::string::npos) {
-                    arg.has_value = true;
-                    arg.value = arg.name.substr(equals_index + 1);
-                    arg.name = arg.name.substr(0, equals_index);
-                }
-
-                _arguments.push_back(arg);
-
-                // If the option isn't in the count map, add it.
-                if (this->_option_counts.find(arg.name) ==
-                    this->_option_counts.end()) {
-                    this->_option_counts[arg.name] = 0;
-                }
-
-                // Increment the count of the option.
-                this->_option_counts[arg.name]++;
-
-                continue;
+        if (is_option) {
+            if (id + 1 < argc) {
+                this->_option_value[argument] = id + 1;
             }
-
-            // Otherwise, it's one or more short options.
-
-            // Iterate through the characters in the argument.
-            for (int j = 1; j < arg.name.size(); j++) {
-                argument option;
-                option.name = "-" + arg.name.substr(j, 1);
-                option.id = id++;
-                option.is_option = true;
-
-                // If the option isn't in the count map, add it.
-                if (this->_option_counts.find(option.name) ==
-                    this->_option_counts.end()) {
-                    this->_option_counts[option.name] = 0;
-                }
-
-                // Increment the count of the option.
-                this->_option_counts[option.name]++;
-
-                // And add the option to the list.
-                this->_arguments.push_back(option);
-            }
-
-            continue;
+        } else {
+            this->_non_option_arguments.emplace_back(id);
         }
-
-        // Otherwise, it's a non-option argument.
-        _arguments.push_back(arg);
-        _non_option_arguments.push_back(arg);
     }
 }
 
 void argh::accepts_argument(const std::string &name) {
-    // Just calling the operator() with the argument name
-    // will ensure that the option is marked as having a value.
-    (*this)(name);
+    // Has the option already been marked as accepting an argument?
+    // If so, return.
+    if (this->_accepts_arguments.count(name) > 0) return;
+
+    // Is it an option? If not, return.
+    if (name[0] != '-' || name == "-" || name == "--") return;
+
+    // Was the option in the program argument list? If not, return.
+    if (this->_option_count[name] == 0) return;
+
+    // Put the option in the `_accepts_arguments` set.
+    this->_accepts_arguments.insert(name);
+
+    // Scan through the non-option arguments until we find
+    // the one that we need to remove.
+    size_t target = this->_option_value[name];
+    for (auto it = this->_non_option_arguments.begin();
+         it != this->_non_option_arguments.end(); it++) {
+        if (*it == target) {
+            this->_non_option_arguments.erase(it);
+            this->_option_count[this->_all_arguments[target]]--;
+            return;
+        }
+    }
 }
 
-unsigned int argh::operator[](const std::string &name) {
-    return this->_option_counts[name];
+size_t argh::operator[](const std::string &name) const {
+    if (this->_option_count.count(name) == 0) return 0;
+
+    return this->_option_count.at(name);
 }
 
 std::string argh::operator()(const std::string &name) {
-    // If the argument isn't in the map, then we don't need to do anything.
-    if (this->_option_counts[name] == 0) return "";
+    // Is it an option? If not, return.
+    if (name[0] != '-' || name == "-" || name == "--") return "";
 
-    // Iterate over the arguments until we find the one with the given name.
-    auto it = this->_arguments.begin();
-    while (it != this->_arguments.end()) {
-        if (it->name == name) {
-            // Once we find the argument, if it has a value, return it.
-            if (it->has_value) return it->value;
+    // Was the option in the program argument list? If not, return.
+    if (this->_option_count[name] == 0) return "";
 
-            // Otherwise, we need to read the next argument and update this one.
-            it->has_value = true;
-            std::string &value = it->value;
-            it++;
-
-            // Ensure that the next argument has a value.
-            value = "";
-            if (it == this->_arguments.end()) return "";
-            if (it->is_option) return "";
-
-            // If the next argument is not an option,
-            // then its name is the value.
-            value = it->name;
-
-            unsigned int id = it->id;
-
-            // We need to remove the argument from the overall list.
-            this->_arguments.erase(it);
-
-            // We also need to remove it from the non-option list.
-            auto non_option_it = this->_non_option_arguments.begin();
-            while (non_option_it != this->_non_option_arguments.end()) {
-                if (non_option_it->id == id) {
-                    this->_non_option_arguments.erase(non_option_it);
-                    break;
-                }
-                non_option_it++;
-            }
-
-            // Finally, we can return the value.
-            return value;
-        }
-        it++;
-    }
-    return "";
-}
-
-std::string argh::operator[](unsigned int index) {
-    if (index >= this->_non_option_arguments.size()) {
+    // Was the option the last argument in the program argument list?
+    // If so, return.
+    if (this->_all_arguments[this->_all_arguments.size() - 1] == name)
         return "";
-    }
 
-    auto it = this->_non_option_arguments.begin();
-    std::advance(it, index);
-    return it->name;
+    // Indicate that the option accepts an argument.
+    this->accepts_argument(name);
+
+    // Return the argument value.
+    return this->_all_arguments[this->_option_value[name]];
 }
 
-unsigned int argh::size() { return this->_non_option_arguments.size(); }
+std::string argh::operator[](size_t index) const {
+    if (index >= this->_non_option_arguments.size()) return "";
+
+    return this->_all_arguments[this->_non_option_arguments[index]];
+}
+
+size_t argh::size() const { return this->_non_option_arguments.size(); }
 
 #endif

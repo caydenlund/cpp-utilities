@@ -4,16 +4,18 @@ project(cpp_utilities)
 set(CMAKE_CXX_STANDARD 17)
 
 include_directories(.)
-#include_directories(arg.h)
+include_directories(arg.h)
 #include_directories(assertions.h)
 include_directories(convert)
 include_directories(fff)
-#include_directories(huge.h)
+include_directories(huge.h)
 
 
 #  //=========\\
 #  ||  arg.h  ||
 #  \\=========//
+
+add_executable(test_argh arg.h/arg.h.test.cpp)
 
 
 #  //================\\
@@ -53,5 +55,5 @@ add_executable(fff fff/fff.cpp)
 #  ||  huge.h  ||
 #  \\==========//
 
-#add_executable(test_huge huge.h/huge.test.cpp)
+add_executable(test_huge huge.h/huge.h.test.cpp)
 
