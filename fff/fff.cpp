@@ -30,8 +30,10 @@
 #include <filesystem>
 #include <iostream>
 #include <list>
+#include <mutex>
 #include <regex>
 #include <string>
+#include <thread>
 #include <unordered_set>
 
 #include "arg.h"
@@ -69,6 +71,12 @@ struct place {
 };
 
 /**
+ * @brief Defines the type of thing that we're looking for (file or folder).
+ *
+ */
+enum search_types { file, directory, any };
+
+/**
  * @brief Translates wildcard syntax into a regular expression pattern.
  *
  * @param pattern The pattern to be translated into the regular expression.
@@ -91,6 +99,108 @@ std::string wild_to_regex(const std::string &pattern) {
 }
 
 /**
+ * @brief Examines the given place.
+ *
+ * @param current_place The place to examine.
+ * @param places_queue The queue of places to examine.
+ * @param searched An unordered set of the places we've already searched.
+ * @param pattern The regular expression pattern to match.
+ * @param thread_counter The number of running threads.
+ * @param output_lock A mutex to protect console output.
+ * @param places_queue_lock A mutex to protect the queue of places to search.
+ * @param thread_counter_lock A mutex to protect the thread counter.
+ * @param search_type Whether to search a file, a directory, or both.
+ * @param min_depth The minimum depth to search.
+ * @param max_depth The maximum depth to search.
+ * @param num_threads The number of threads to use.
+ */
+void examine_place(const place &current_place, std::list<place> &places_queue,
+                   std::unordered_set<std::string> &searched,
+                   std::regex &pattern, unsigned int &thread_counter,
+                   std::mutex &output_lock, std::mutex &places_queue_lock,
+                   std::mutex &thread_counter_lock, search_types search_type,
+                   unsigned int min_depth, unsigned int max_depth,
+                   unsigned int num_threads) {
+    output_lock.lock();
+    std::cout << current_place.path << std::endl;
+    output_lock.unlock();
+
+    try {
+        bool is_directory = std::filesystem::is_directory(current_place.path);
+
+        // If this is a directory, and we're not at our max depth,
+        // add this place's children to the queue.
+        if (is_directory && current_place.depth < max_depth) {
+            // Iterate over all children.
+            std::filesystem::directory_iterator it(current_place.path);
+            for (const auto &entry : it) {
+                // Skip directories that we've already searched.
+                if (searched.count(entry.path()) > 0) continue;
+
+                // Add it to the queue and the `searched` tracker.
+                place new_place(entry.path(), current_place.depth + 1);
+                places_queue.emplace_back(new_place);
+                searched.insert(entry.path());
+            }
+        }
+
+        output_lock.lock();
+        std::cout << "1" << std::endl;
+        output_lock.unlock();
+
+        // Next, if we haven't reached our min depth yet,
+        // we don't need to perform the name checks.
+        if (current_place.depth < min_depth) return;
+
+        output_lock.lock();
+        std::cout << "2" << std::endl;
+        output_lock.unlock();
+
+        // If we're not searching for this kind of item, then skip this item.
+        if ((is_directory && search_type == search_types::file) ||
+            (!is_directory && search_type == search_types::directory))
+            return;
+
+        // Now, we check for a name match.
+        std::string short_name =
+            std::filesystem::path(current_place.path).filename();
+
+        if (std::regex_match(short_name, pattern)) {
+            output_lock.lock();
+            std::cout << current_place.path << std::endl;
+            output_lock.unlock();
+        }
+    } catch (std::filesystem::filesystem_error &error) {
+        // TODO: Formatting.
+        output_lock.lock();
+        std::cerr << error.path1() << ": " << error.what() << std::endl;
+        output_lock.unlock();
+    }
+
+    thread_counter_lock.lock();
+    places_queue_lock.lock();
+    thread_counter--;
+
+    while (thread_counter < num_threads && !places_queue.empty()) {
+        place next_place = places_queue.front();
+        places_queue.pop_front();
+
+        thread_counter++;
+
+        std::thread(examine_place, std::cref(next_place),
+                    std::ref(places_queue), std::ref(searched),
+                    std::ref(pattern), std::ref(thread_counter),
+                    std::ref(output_lock), std::ref(places_queue_lock),
+                    std::ref(thread_counter_lock), search_type, min_depth,
+                    max_depth, num_threads)
+            .detach();
+    }
+
+    places_queue_lock.unlock();
+    thread_counter_lock.unlock();
+}
+
+/**
  * @brief Main program entry point.
  *
  * @param argc The count of command-line arguments.
@@ -99,11 +209,10 @@ std::string wild_to_regex(const std::string &pattern) {
  */
 int main(int argc, char **argv) {
     /**
-     * @brief The type of thing that we're looking for.
-     * @details Defaults to search for everything.
+     * @brief The type of thing that we're looking for (file or folder).
+     * @details Defaults to search for anything.
      *
      */
-    enum search_types { file, directory, any };
     search_types search_type = search_types::any;
 
     /**
@@ -111,7 +220,7 @@ int main(int argc, char **argv) {
      * @details Defaults to match everything.
      *
      */
-    std::regex pattern = std::regex(".*");
+    std::regex pattern(".*");
 
     /**
      * @brief The places_queue to search.
@@ -134,21 +243,47 @@ int main(int argc, char **argv) {
 
     /**
      * @brief The maximum depth to search.
+     * @details Defaults to 2^32 - 1.
      *
      */
     unsigned int max_depth = -1;
 
     /**
      * @brief The number of threads to use.
+     * @details Defaults to 1.
      *
      */
-    unsigned int threads = 1;
+    unsigned int num_threads = 1;
 
     /**
      * @brief Processes the program arguments.
      *
      */
     argh args(argc, argv);
+
+    /**
+     * @brief Counter of all threads currently running.
+     *
+     */
+    unsigned int thread_counter = 0;
+
+    /**
+     * @brief Mutex to protect console output.
+     *
+     */
+    std::mutex output_lock;
+
+    /**
+     * @brief Mutex to protect the queue of places to search.
+     *
+     */
+    std::mutex places_queue_lock;
+
+    /**
+     * @brief Mutex to protect the counter of running threads.
+     *
+     */
+    std::mutex thread_counter_lock;
 
     // First, select the pattern.
     // The argument checks are ordered from most specific to least specific.
@@ -182,15 +317,16 @@ int main(int argc, char **argv) {
 
     // Next, handle the type of search.
     if (args["-type"] > 0) {
-        if (args("-type") == "d" || args("-type") == "directory") {
+        std::string type = args("-type");
+        if (type == "d" || type == "directory") {
             search_type = search_types::directory;
-        } else if (args("-type") == "f" || args("-type") == "file") {
+        } else if (type == "f" || type == "file") {
             search_type = search_types::file;
-        } else if (args("-type") == "a" || args("-type") == "any") {
+        } else if (type == "a" || type == "any") {
             search_type = search_types::any;
         } else {
-            std::cerr << "Error: unknown search type \"" << args("-type")
-                      << "\"." << std::endl;
+            std::cerr << "Error: unknown search type \"" << type << "\"."
+                      << std::endl;
             exit(1);
         }
     }
@@ -207,11 +343,11 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    // Handle the threads' argument, if given:
+    // Handle the `-j` (threads) argument, if given:
     if (args["-j"] > 0) {
-        threads = std::stoi(args("-j"));
+        num_threads = std::stoi(args("-j"));
 
-        if (threads < 1) {
+        if (num_threads < 1) {
             std::cerr << "Error: must use at least 1 thread." << std::endl;
             exit(1);
         }
@@ -242,53 +378,34 @@ int main(int argc, char **argv) {
     }
 
     // Begin search.
-    while (!places_queue.empty()) {
+    places_queue_lock.lock();
+    for (unsigned int thread_id = 0; thread_id < num_threads; thread_id++) {
+        if (places_queue.empty()) break;
         place current_place = places_queue.front();
         places_queue.pop_front();
 
-        try {
-            bool is_directory =
-                std::filesystem::is_directory(current_place.path);
+        thread_counter_lock.lock();
+        thread_counter++;
+        thread_counter_lock.unlock();
 
-            // If this is a directory, and we're not at our max depth,
-            // add this place's children to the queue.
-            if (is_directory && current_place.depth < max_depth) {
-                // Iterate over all children.
-                std::filesystem::directory_iterator it(current_place.path);
-                for (const auto &entry : it) {
-                    // Skip directories that we've already searched.
-                    if (searched.count(entry.path()) > 0) continue;
+        std::thread(examine_place, std::cref(current_place),
+                    std::ref(places_queue), std::ref(searched),
+                    std::ref(pattern), std::ref(thread_counter),
+                    std::ref(output_lock), std::ref(places_queue_lock),
+                    std::ref(thread_counter_lock), search_type, min_depth,
+                    max_depth, num_threads)
+            .detach();
+    }
+    places_queue_lock.unlock();
 
-                    // Add it to the queue and the `searched` tracker.
-                    place new_place(entry.path(), current_place.depth + 1);
-                    places_queue.emplace_back(new_place);
-                    searched.insert(entry.path());
-                }
-            }
+    thread_counter_lock.lock();
+    bool running_threads = thread_counter > 0;
+    thread_counter_lock.unlock();
 
-            // Next, if we haven't reached our min depth yet,
-            // we don't need to perform the name checks.
-            if (current_place.depth < min_depth) continue;
-
-            // If we're not searching for this kind of item, then continue.
-            if ((is_directory && search_type == search_types::file) ||
-                (!is_directory && search_type == search_types::directory))
-                continue;
-
-            // Now, we check for a name match.
-            std::string short_name =
-                std::filesystem::path(current_place.path).filename();
-
-            if (std::regex_match(short_name, pattern)) {
-                std::cout << current_place.path << std::endl;
-                continue;
-            }
-        } catch (std::filesystem::filesystem_error &error) {
-            // TODO: Formatting.
-            std::cerr << error.path1() << ": " << error.what() << std::endl;
-
-            continue;
-        }
+    while (running_threads) {
+        thread_counter_lock.lock();
+        running_threads = thread_counter > 0;
+        thread_counter_lock.unlock();
     }
 
     return 0;

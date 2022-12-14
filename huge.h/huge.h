@@ -1,7 +1,7 @@
 /**
  * @file huge.h
  * @author Cayden Lund (cayden.lund@utah.edu)
- * @brief Header-only library for handling huge numbers.
+ * @brief Header-only library for handling huge integers.
  * @date 24 July 2022
  *
  * @copyright Copyright (c) 2022 by Cayden Lund.

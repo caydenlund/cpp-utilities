@@ -1,7 +1,7 @@
 
 #include "huge.h"
 
-#include "assertions.h"
+#include "assertions.h/assertions.h"
 
 /**
  * @brief Ensures that class constructors don't throw an exception.

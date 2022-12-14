@@ -239,11 +239,16 @@ std::string convert::as_binary() {
         binary_num.insert(index, " ");
     }
 
-    output << "Raw binary:      " << binary_num;
+    output << "Raw binary:      ";
 
     if (binary_num.empty()) {
         output << "0";
     }
+
+    // Insert leading zeroes to pad to a full byte, if necessary.
+    output << std::string((8 - this->_binary_num.size() % 8) % 8, '0');
+
+    output << binary_num;
 
     // If it has 32 or 64 digits, also output it formatted in the floating-point
     // format.
@@ -286,21 +291,53 @@ std::string convert::as_binary() {
 }
 
 std::string convert::as_decimal() {
+    std::stringstream output;
+    std::string binary_num = this->_binary_num;
+
     if (this->_binary_num.empty()) {
-        return "0";
+        binary_num = "0";
     }
 
-    unsigned long long total = 0;
+    if (binary_num.size() <= 64) {
+        unsigned long long total = 0;
 
-    for (size_t index = 0; index < this->_binary_num.size(); index++) {
-        size_t shift = this->_binary_num.size() - index - 1;
+        for (size_t index = 0; index < binary_num.size(); index++) {
+            size_t shift = binary_num.size() - index - 1;
 
-        if (this->_binary_num[index] == '0') continue;
+            if (binary_num[index] == '0') continue;
 
-        total += (1 << shift);
+            total += (1UL << shift);
+        }
+
+        output << "As unsigned integer: " << total;
+
+        if ((binary_num.size() == 32 || binary_num.size() == 64) &&
+            binary_num[0] == '1') {
+            unsigned long long to_subtract = 1;
+            to_subtract <<= binary_num.size() - 1;
+            output << std::endl
+                   << "As signed integer:   -" << total - to_subtract;
+        }
+
+        if (binary_num.size() <= 32) {
+            std::string float_bin =
+                std::string(32 - this->_binary_num.length(), '0') +
+                this->_binary_num;
+
+            // output << std::endl << "As IEEE float:       " << float_bin;
+            // TODO: As float.
+        }
+        if (binary_num.size() <= 64) {
+            std::string double_bin =
+                std::string(64 - this->_binary_num.length(), '0') +
+                this->_binary_num;
+
+            // output << std::endl << "As IEEE double:      " << double_bin;
+            // TODO: As double.
+        }
     }
 
-    return std::to_string(total);
+    return output.str();
 }
 
 std::string convert::as_hex() {
