@@ -149,3 +149,39 @@ int main(int argc, char** argv) {
 There is also a file `args/args.tests.cpp` which contains unit tests for the class.
 
 ## `testing`: A simple unit test suite.
+
+A single header file is included (`testing/testing.hpp`).
+This header file defines several top-level functions for unit testing.
+
+First, several assertions are defined:
+
+* `assert_eq<obj_t>(obj_t a, obj_t b, std::string message)`:
+  Asserts that object `a` is equal (`==`) to object `b`.
+  Throws an exception with the given message otherwise.
+* `assert_neq<obj_t>(obj_t a, obj_t b, std::string message)`:
+  Asserts that object `a` is not equal (`!=`) to object `b`.
+  Throws an exception with the given message otherwise.
+* `assert_leq<obj_t>(obj_t a, obj_t b, std::string message)`:
+  Asserts that object `a` is less than or equal (`<=`) to object `b`.
+  Throws an exception with the given message otherwise.
+* `assert_geq<obj_t>(obj_t a, obj_t b, std::string message)`:
+  Asserts that object `a` is greater than or equal (`>=`) to object `b`.
+  Throws an exception with the given message otherwise.
+* `assert_lt<obj_t>(obj_t a, obj_t b, std::string message)`:
+  Asserts that object `a` is less (`<`) than object `b`.
+  Throws an exception with the given message otherwise.
+* `assert_gt<obj_t>(obj_t a, obj_t b, std::string message)`:
+  Asserts that object `a` is greater (`>`) than object `b`.
+  Throws an exception with the given message otherwise.
+* `assert_true(bool cond, std::string message)`:
+  Asserts that the given condition is true.
+  Throws an exception with the given message otherwise.
+* `assert_false(bool cond, std::string message)`:
+  Asserts that the given condition is false.
+  Throws an exception with the given message otherwise.
+
+Next, there is a function defined (`testing::run_all(const std::vector<test_t>& tests)`) for running all given tests.
+A test (`test_t`) is a pair of a function with no arguments and a void return value, and a string
+name (`std::tuple<std::function<void()>, std::string>`).
+A test fails when an exception is thrown; it passes otherwise.
+This function prints output to the console.
