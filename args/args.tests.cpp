@@ -204,6 +204,10 @@ void test_parse_no_args() {
     run_parser_config("Just program name", {"exec"}, {}, {}, {});
 }
 
+/**
+ * @brief Ensures that `args::parse` correctly parses an argument vector with operands but not options.
+ *
+ */
 void test_parse_operands() {
     run_parser_config("Simple argv", {"exec", "arg_1", "arg_2", "arg_3"}, {"arg_1", "arg_2", "arg_3"}, {}, {});
     run_parser_config("Reverse argv", {"exec", "arg_3", "arg_2", "arg_1"}, {"arg_3", "arg_2", "arg_1"}, {}, {});
@@ -213,6 +217,10 @@ void test_parse_operands() {
     run_parser_config("Double-hyphen", {"exec", "--", "-o", "--output"}, {"-o", "--output"}, {}, {});
 }
 
+/**
+ * @brief Ensures that `args::parse` correctly parses an argument vector with short options, but no option-arguments.
+ *
+ */
 void test_parse_short_options_no_arg() {
     run_parser_config("Split options", {"exec", "-a", "-b", "-a", "-b", "-3", "-3"}, {},
                       {{"-a", 2}, {"-b", 2}, {"-3", 2}}, {});
@@ -222,6 +230,10 @@ void test_parse_short_options_no_arg() {
                       {{"-a", 2}, {"-b", 2}, {"-3", 2}}, {});
 }
 
+/**
+ * @brief Ensures that `args::parse` correctly parses an argument vector with short options and option-arguments.
+ *
+ */
 void test_parse_short_options_with_arg() {
     run_parser_config("Split opt-args", {"exec", "-a", "x", "-b", "y", "-3", "z", "-a", "-a", "-b", "-b", "-3", "-3"},
                       {}, {{"-a", 2}, {"-b", 2}, {"-3", 2}},
@@ -239,6 +251,10 @@ void test_parse_short_options_with_arg() {
                       {{"-a", 1}, {"-b", 1}, {"-3", 1}}, {{"-a", {"x"}}, {"-b", {"y"}}, {"-3", {"z"}}});
 }
 
+/**
+ * @brief Ensures that `args::parse` correctly parses an argument vector with long options, but no option-arguments.
+ *
+ */
 void test_parse_long_options_no_arg() {
     run_parser_config("Split options", {"exec", "--a", "--arg2", "--3"}, {}, {{"--a", 1}, {"--arg2", 1}, {"--3", 1}},
                       {});
@@ -246,6 +262,10 @@ void test_parse_long_options_no_arg() {
                       {{"--a", 1}, {"--arg2", 1}, {"--3", 1}}, {});
 }
 
+/**
+ * @brief Ensures that `args::parse` correctly parses an argument vector with long options and option-arguments.
+ *
+ */
 void test_parse_long_options_with_arg() {
     run_parser_config("Split opt-args",
                       {"exec", "--a", "x", "--a", "--a", "--arg2", "y", "--arg2", "--arg2", "--3", "z", "--3", "--3"},
@@ -262,6 +282,11 @@ void test_parse_long_options_with_arg() {
                       {{"--a", {"x"}}, {"--arg2", {"y"}}, {"--3", {"z"}}});
 }
 
+/**
+ * @brief Main program entry point.
+ *
+ * @return 0.
+ */
 int main() {
     const std::vector<std::tuple<std::function<void()>, std::string>> all_tests = {
             {test_constructor_no_fail, "`args::args` no-fail"},
