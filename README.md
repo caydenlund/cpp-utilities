@@ -15,7 +15,8 @@ The arguments are inspired by the POSIX and GNU argument syntax, according to th
     2. **Options**. There are two kinds of options: short (single-character) and long (multi-character).
        In a call to `clang++ file.cpp -o exec`, `-o` is a short option.
        Short options may only be made of letters (uppercase or lowercase) or numbers.
-       Long options may only be made of letters, numbers, hyphens, and underscores; they may not start with a hyphen.
+       Long options may only be made of letters, numbers, hyphens, and underscores,
+       and they may not start with a hyphen.
        Options are case-sensitive.
     3. **Option-arguments**. These are arguments of an option.
        In a call to `clang++ file.cpp -o exec`, `exec` is an option-argument (i.e., the argument of the option `-o`).
@@ -26,8 +27,9 @@ The arguments are inspired by the POSIX and GNU argument syntax, according to th
        In a call to `./exec -a -b -c -- -d -e -f`, `-d`, `-e`, and `-f` are operands, not options.
 * Short options are always preceded by a single hyphen. (E.g., `./exec -a -b -c`.)
 * Short options may be combined.
-  Note that the only short option that can accept an option-argument is the final option.
-  (E.g., `./exec -a -b -c` is equivalent to `./exec -abc`. `-a` and `-b` cannot accept option-arguments.)
+  Note that as soon as there is a short option that can accept an option-argument,
+  the rest of the argument is considered the option-argument.
+  (E.g., `./exec -a -b -c` is equivalent to `./exec -abc`, provided `-a` and `-b` don't accept option-arguments.)
 * There are three ways to specify option-arguments:
     1. For short options only, the option-argument may be specified directly after the option, with no delimiter.
        In a call to `./exec -n5`, `5` is the option-argument of `-n`.
@@ -104,7 +106,7 @@ int main(int argc, char** argv) {
 ```
 
 Access the operands using the subscript `[]` operator with an integer index.
-You can also use the `size()` method to get the number of operands plus one (for the program name).
+You can also use the `size()` method to get the number of operands.
 
 ```c++
 int main(int argc, char** argv) {
@@ -179,6 +181,13 @@ First, several assertions are defined:
 * `assert_false(bool cond, std::string message)`:
   Asserts that the given condition is false.
   Throws an exception with the given message otherwise.
+* `assert_throws<err_t>(std::function<void()> func, std::string message)`:
+  Asserts that the given function throws the given type of exception.
+  The exception type defaults to `std::exception`.
+* `assert_throws<err_t>(std::function<void()> func, std::string expected_message, std::string message)`:
+  Asserts that the given function throws the given type of exception.
+  The exception type defaults to `std::exception`.
+  When the exception is thrown, asserts that the exception's message (`::what()`) matches the given expected message.
 
 Next, there is a function defined (`testing::run_all(const std::vector<test_t>& tests)`) for running all given tests.
 A test (`test_t`) is a pair of a function with no arguments and a void return value, and a string
