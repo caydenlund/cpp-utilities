@@ -230,11 +230,11 @@ namespace testing {
      * @brief Asserts that the given function throws the given type of exception.
      * @details Throws an exception on failure.
      *
-     * @tparam err_t The type of exception that should be thrown.
+     * @tparam err_t The type of exception that should be thrown. Defaults to `std::exception`.
      * @param func The function that should through the given type of exception.
      * @param message The error message on failure.
      */
-    template<typename err_t>
+    template<typename err_t = std::exception>
     void assert_throws(const std::function<void()>& func, const std::string& message) {
         try {
             func();
@@ -248,12 +248,12 @@ namespace testing {
      * @details Checks whether the thrown exception has the correct (`::what()`) message.
      *     Throws an exception on failure.
      *
-     * @tparam err_t The type of exception that should be thrown.
+     * @tparam err_t The type of exception that should be thrown. Defaults to `std::exception`.
      * @param func The function that should through the given type of exception.
      * @param expected_message The message that the thrown exception should report.
      * @param message The error message on failure.
      */
-    template<typename err_t>
+    template<typename err_t = std::exception>
     void assert_throws(const std::function<void()>& func, const std::string& expected_message,
                        const std::string& message) {
         try {
