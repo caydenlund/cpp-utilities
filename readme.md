@@ -150,6 +150,12 @@ int main(int argc, char** argv) {
 
 There is also a file `args/args.tests.cpp` which contains unit tests for the class.
 
+## `fff`: Find my freaking file!
+
+This utility finds files or directories with names that match the given pattern.
+Compare it to GNU's `find`.
+The search is done in a breadth-first manner.
+
 ## `testing`: A simple unit test suite.
 
 A single header file is included (`testing/testing.hpp`).
