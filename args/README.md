@@ -1,15 +1,23 @@
-# C++ Utilities
+# `args`: A command-line argument parser
 
-This repository contains several miscellaneous utility libraries and applications.
+Are you tired of parsing command-line arguments?
+This module makes it dead simple.
 
-## `args`: A command line argument parser.
+## Features
 
-A single header file is included (`args/args.hpp`).
-This header file defines a new class, `util::args`, which parses the command-line arguments.
+* Options that accept arguments (`-n3`, `--output file.txt`, `--foo=bar`).
+* Arguments that can appear multiple times.
+  For example, you might want to count
+  the number of `-v` options to determine the verbosity level.
+* Concatenation of multiple single-letter options (`-abc` is equivalent to `-a -b -c`).
+* Double-hyphen: all following arguments are treated as program operands.
 
-The arguments are inspired by the POSIX and GNU argument syntax, according to the following rules:
+## Concepts
 
-* There are four types of arguments:
+The argument style is inspired by the POSIX and GNU argument syntax,
+according to the following rules:
+
+* There are five types of arguments:
     1. **The program name**. This is, of course, the first argument in the array.
        In a call to `clang++ file.cpp -o exec`, the program name is `clang++`.
     2. **Options**. There are two kinds of options: short (single-character) and long (multi-character).
@@ -40,7 +48,9 @@ The arguments are inspired by the POSIX and GNU argument syntax, according to th
        In a call to `./exec --number=5`, `5` is the option-argument of `--number`.
        Similarly, in a call to `./exec -an=5`, `5` is the option-argument of `-n`.
 
-Usage is simple. First, instantiate the object with a list of all options that take option-arguments.
+## Usage
+
+First, instantiate the object with a list of all options that take option-arguments.
 
 ```c++
 int main(int argc, char** argv) {
@@ -120,7 +130,8 @@ int main(int argc, char** argv) {
 }
 ```
 
-You can use the `begin()` and `end()` methods to iterate over the operands.
+Alternatively, you can use the `begin()` and `end()` methods or a range-based `for` loop
+to iterate over the operands.
 
 ```c++
 int main(int argc, char** argv) {
@@ -136,7 +147,7 @@ int main(int argc, char** argv) {
 }
 ```
 
-The `name()` method returns the program name.
+Finally, the `name()` method returns the program name.
 
 ```c++
 int main(int argc, char** argv) {
@@ -147,56 +158,3 @@ int main(int argc, char** argv) {
     //  . . .
 }
 ```
-
-There is also a file `args/args.tests.cpp` which contains unit tests for the class.
-
-## `fff`: Find my freaking file!
-
-This utility finds files or directories with names that match the given pattern.
-Compare it to GNU's `find`.
-The search is done in a breadth-first manner.
-
-## `testing`: A simple unit test suite.
-
-A single header file is included (`testing/testing.hpp`).
-This header file defines several top-level functions for unit testing.
-
-First, several assertions are defined:
-
-* `assert_eq<obj_t>(obj_t a, obj_t b, std::string message)`:
-  Asserts that object `a` is equal (`==`) to object `b`.
-  Throws an exception with the given message otherwise.
-* `assert_neq<obj_t>(obj_t a, obj_t b, std::string message)`:
-  Asserts that object `a` is not equal (`!=`) to object `b`.
-  Throws an exception with the given message otherwise.
-* `assert_leq<obj_t>(obj_t a, obj_t b, std::string message)`:
-  Asserts that object `a` is less than or equal (`<=`) to object `b`.
-  Throws an exception with the given message otherwise.
-* `assert_geq<obj_t>(obj_t a, obj_t b, std::string message)`:
-  Asserts that object `a` is greater than or equal (`>=`) to object `b`.
-  Throws an exception with the given message otherwise.
-* `assert_lt<obj_t>(obj_t a, obj_t b, std::string message)`:
-  Asserts that object `a` is less (`<`) than object `b`.
-  Throws an exception with the given message otherwise.
-* `assert_gt<obj_t>(obj_t a, obj_t b, std::string message)`:
-  Asserts that object `a` is greater (`>`) than object `b`.
-  Throws an exception with the given message otherwise.
-* `assert_true(bool cond, std::string message)`:
-  Asserts that the given condition is true.
-  Throws an exception with the given message otherwise.
-* `assert_false(bool cond, std::string message)`:
-  Asserts that the given condition is false.
-  Throws an exception with the given message otherwise.
-* `assert_throws<err_t>(std::function<void()> func, std::string message)`:
-  Asserts that the given function throws the given type of exception.
-  The exception type defaults to `std::exception`.
-* `assert_throws<err_t>(std::function<void()> func, std::string expected_message, std::string message)`:
-  Asserts that the given function throws the given type of exception.
-  The exception type defaults to `std::exception`.
-  When the exception is thrown, asserts that the exception's message (`::what()`) matches the given expected message.
-
-Next, there is a function defined (`testing::run_all(const std::vector<test_t>& tests)`) for running all given tests.
-A test (`test_t`) is a pair of a function with no arguments and a void return value, and a string
-name (`std::tuple<std::function<void()>, std::string>`).
-A test fails when an exception is thrown; it passes otherwise.
-This function prints output to the console.

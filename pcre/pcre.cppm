@@ -1,5 +1,5 @@
 /**
- * @file pcre.hpp
+ * @file pcre.cppm
  * @author Cayden Lund (cayden.lund@utah.edu)
  *
  * @brief A header-only PCRE2-compatible regular expression engine.
@@ -512,9 +512,6 @@
  *
  */
 
-#ifndef PCRE_HPP
-#define PCRE_HPP
-
 #include <string>
 #include <vector>
 
@@ -529,7 +526,12 @@ namespace util {
      *     First, compile a pattern from a string.
      *
      *     ```
-     *     util::pcre pattern("(foo|bar)" + "\(" + "(?<args>.*)" + "\)");
+     *     //  `(foo|bar)\((?<args>.*)\)`
+     *     //      - `(foo|bar)`  --  Literal `foo` or `bar`.
+     *     //      - `\(`         --  Literal `(`.
+     *     //      - (?<args>.*)  --  Any number of characters.
+     *     //      - `\)`         --  Literal `)`.
+     *     util::pcre pattern("(foo|bar)" + "\\(" + "(?<args>.*)" + "\\)");
      *     ```
      *
      *     Match a string against the compiled pattern using the
@@ -566,9 +568,10 @@ namespace util {
      *           Static function. Returns all matches from the `start_index`.
      *
      *     ```
-     *     util::pcre::match_result pat_match = pattern.match("foo(x, y, z)");
-     *     //  Could also use `pat_match = util::pcre::match(pattern, "foo(x, y, z)")`
-     *     //  or `pat_match = pattern("foo(x, y, z)")`.
+     *     const std::string input = "foo(x, y, z)";
+     *     util::pcre::match_result pat_match = pattern.match(input);
+     *     //  Could also use `pat_match = util::pcre::match(pattern, input)`
+     *     //  or `pat_match = pattern("input")`.
      *     ```
      *
      *     Retrieve capture groups from the match using the subscript operator.
@@ -579,10 +582,11 @@ namespace util {
      *     const std::string args = pat_match["args"];   //  "x, y, z". Could also use `pat_match[2]`.
      *     ```
      *
-     *     Perform a regex substitution against the compiled pattern using the `util::pcre::sub()` function.
-     *     There are two forms:
+     *     Perform a regex substitution against the compiled pattern using the `util::pcre::sub()`
+     *     or `util::pcre::sub_all()` function.
+     *     There are four forms:
      *         * ```
-     *           std::string util::pcre::sub(const std::string &subject,
+     *           std::string util::pcre::sub(const std::string& subject,
      *                                       const std::string& replacement,
      *                                       size_t start_index = 0) const;
      *           ```
@@ -614,6 +618,7 @@ namespace util {
      *
      *     ```
      *     std::cout << pattern.sub("ABC foo(x, y, z) DEF", "XYZ");                        //  "ABC XYZ DEF".
+     *     std::cout << pattern.sub("foo(x, y, z) foo(x, y, z)", "---");                   //  "--- foo(x, y, z)".
      *     std::cout << util::pcre::sub(pattern, "foo(x, y, z)", "\\2");                   //  "x, y, z".
      *     std::cout << pattern.sub_all("foo(a, b, c) bar(d, e, f) baz(g, h, i)", "---");  //  "--- --- baz(g, h, i)"
      *     ```
@@ -627,6 +632,14 @@ namespace util {
          * @param options A string of options. Optional.
          */
         pcre(const std::string& pattern, const std::string& options = "");
+
+        /**
+         * @brief Compiles a new `pcre` regular expression object.
+         *
+         * @param pattern The regular expression to match.
+         * @param options A set of options. Optional.
+         */
+        pcre(const std::string& pattern, const std::vector<std::string>& options);
 
         /**
          * @brief The result of a `::match(subject, index)` call.
@@ -654,11 +667,20 @@ namespace util {
         class match_result {
         public:
             /**
+             * @brief Returns the number of subgroups, plus one (for the entire string match).
+             *
+             * @return The number of subgroups, plus one (for the entire string match).
+             */
+            [[nodiscard]] size_t size() const;
+
+            //  TODO: Rest of the methods.
+
+            /**
              * @brief Returns the entire matched string.
              *
              * @return The entire matched string; the empty string if the pattern matched nothing.
              */
-            std::string operator()() const;
+            [[nodiscard]] std::string operator()() const;
 
             /**
              * @brief Returns the matched subgroup string for the given group index.
@@ -667,7 +689,7 @@ namespace util {
              * @param group_index The index of the subgroup to return.
              * @return The matched string of the given group index.
              */
-            std::string operator[](size_t group_index) const;
+            [[nodiscard]] std::string operator[](size_t group_index) const;
 
             /**
              * @brief Returns the matched subgroup string for the given group name.
@@ -675,7 +697,7 @@ namespace util {
              * @param group_name The name of the subgroup to return.
              * @return The matched string of the given group name.
              */
-            std::string operator[](const std::string& group_name) const;
+            [[nodiscard]] std::string operator[](const std::string& group_name) const;
         };
 
         /**
@@ -694,7 +716,7 @@ namespace util {
          * @param start_index The start index from which to match. Optional.
          * @return The result of the match operation.
          */
-        match_result match(const std::string& subject, size_t start_index = 0) const;
+        [[nodiscard]] match_result match(const std::string& subject, size_t start_index = 0) const;
 
         /**
          * @brief Matches the given string against the given compiled pattern.
@@ -713,7 +735,7 @@ namespace util {
          * @param start_index The start index from which to match. Optional.
          * @return All results of the match operation.
          */
-        std::vector<match_result> match_all(const std::string& subject, size_t start_index = 0) const;
+        [[nodiscard]] std::vector<match_result> match_all(const std::string& subject, size_t start_index = 0) const;
 
         /**
          * @brief Matches the given string against the given compiled pattern.
@@ -734,7 +756,8 @@ namespace util {
          * @param start_index The start index from which to match. Optional.
          * @return The result of the substitution operation.
          */
-        std::string replace(const std::string& subject, const std::string& replacement, size_t start_index = 0) const;
+        [[nodiscard]] std::string replace(const std::string& subject, const std::string& replacement,
+                                          size_t start_index = 0) const;
 
         /**
          * @brief Replaces the first match of the given compiled pattern with the given replacement.
@@ -756,8 +779,8 @@ namespace util {
          * @param start_index The start index from which to match. Optional.
          * @return The result of the substitution operation.
          */
-        std::string replace_all(const std::string& subject, const std::string& replacement,
-                                size_t start_index = 0) const;
+        [[nodiscard]] std::string replace_all(const std::string& subject, const std::string& replacement,
+                                              size_t start_index = 0) const;
 
         /**
          * @brief Replaces all matches of the given compiled pattern with the given replacement.
@@ -773,5 +796,3 @@ namespace util {
     };
 
 }  //  namespace util
-
-#endif  //  PCRE_HPP

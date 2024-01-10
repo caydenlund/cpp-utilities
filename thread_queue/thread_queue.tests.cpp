@@ -10,7 +10,7 @@
  */
 
 #include "thread_queue.hpp"
-#include "testing/testing.hpp"
+#include "testing/testing.cppm"
 
 #include <iostream>
 
