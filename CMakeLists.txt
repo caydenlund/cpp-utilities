@@ -7,12 +7,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
-add_executable(test.args)
-target_sources(test.args
+
+#  ==============
+#  ||  `args`  ||
+#  ==============
+
+add_executable(args.demo args/args.demo.cpp)
+target_sources(args.demo
         PUBLIC
-        args/args.tests.cpp
+        FILE_SET modules TYPE CXX_MODULES FILES
+        args/args.cppm
 )
-target_sources(test.args
+
+add_executable(args.tests args/args.tests.cpp)
+target_sources(args.tests
         PUBLIC
         FILE_SET modules TYPE CXX_MODULES FILES
         args/args.cppm
