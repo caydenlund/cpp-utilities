@@ -9,15 +9,17 @@
  *
  */
 
+import args;
+import testing;
+
+#include <functional>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "args.hpp"
-#include "testing/testing.hpp"
 
-using testing::run_all, testing::assert_eq, testing::assert_throws;
+using testing::run_all, testing::assert_eq;
 using util::args;
 
 
@@ -102,8 +104,11 @@ void run_parser_config(const std::string& test_name, const std::vector<char cons
     };
 
     //  Build a list of all options that accept arguments.
-    std::vector<std::string> options_with_arguments;
-    for (const auto& option : option_args) options_with_arguments.emplace_back(std::get<0>(option));
+    std::vector<std::string> options_with_arguments(option_args.size());
+    {
+        size_t option_arg_index = 0;
+        for (const auto& option : option_args) options_with_arguments[option_arg_index++] = std::get<0>(option);
+    }
 
     //  Instantiate the parser and parse the argument vector.
     args parser(options_with_arguments);
@@ -147,6 +152,8 @@ void run_parser_config(const std::string& test_name, const std::vector<char cons
     ===================
  */
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "UnusedLocalVariable"
 /**
  * @brief Ensures that the `args::args` constructor never raises an exception.
  *
@@ -164,6 +171,7 @@ void test_constructor_no_fail() {
 
     const args parser_misc_malformed({"", "_", "=", "o", "abc"});
 }
+#pragma clang diagnostic pop
 
 /**
  * @brief Ensures that the `args::parse` method never raises an exception.

@@ -48,8 +48,7 @@
  *
  */
 
-#ifndef TESTING_HPP
-#define TESTING_HPP
+module;
 
 #include <exception>
 #include <functional>
@@ -57,6 +56,8 @@
 #include <string>
 #include <tuple>
 #include <vector>
+
+export module testing;
 
 namespace testing {
 
@@ -66,7 +67,8 @@ namespace testing {
      * @param tests The tests to run.
      * @param use_colors Whether to use colors or not. Defaults to true.
      */
-    void run_all(const std::vector<std::tuple<std::function<void()>, std::string>>& tests, bool use_colors = true) {
+    export void run_all(const std::vector<std::tuple<std::function<void()>, std::string>>& tests,
+                        bool use_colors = true) {
         if (tests.empty()) {
             std::cout << "No tests to run.\n";
             return;
@@ -129,7 +131,7 @@ namespace testing {
      * @param rhs The second item to compare.
      * @param message The error message on failure.
      */
-    template<typename obj_t>
+    export template<typename obj_t>
     void assert_eq(const obj_t& lhs, const obj_t& rhs, const std::string& message) {
         if (!(lhs == rhs)) throw std::runtime_error(message);
     }
@@ -143,7 +145,7 @@ namespace testing {
      * @param rhs The second item to compare.
      * @param message The error message on failure.
      */
-    template<typename obj_t>
+    export template<typename obj_t>
     void assert_neq(const obj_t& lhs, const obj_t& rhs, const std::string& message) {
         if (!(lhs != rhs)) throw std::runtime_error(message);
     }
@@ -157,7 +159,7 @@ namespace testing {
      * @param rhs The second item to compare.
      * @param message The error message on failure.
      */
-    template<typename obj_t>
+    export template<typename obj_t>
     void assert_leq(const obj_t& lhs, const obj_t& rhs, const std::string& message) {
         if (!(lhs <= rhs)) throw std::runtime_error(message);
     }
@@ -171,7 +173,7 @@ namespace testing {
      * @param rhs The second item to compare.
      * @param message The error message on failure.
      */
-    template<typename obj_t>
+    export template<typename obj_t>
     void assert_geq(const obj_t& lhs, const obj_t& rhs, const std::string& message) {
         if (!(lhs >= rhs)) throw std::runtime_error(message);
     }
@@ -185,7 +187,7 @@ namespace testing {
      * @param rhs The second item to compare.
      * @param message The error message on failure.
      */
-    template<typename obj_t>
+    export template<typename obj_t>
     void assert_lt(const obj_t& lhs, const obj_t& rhs, const std::string& message) {
         if (!(lhs < rhs)) throw std::runtime_error(message);
     }
@@ -199,7 +201,7 @@ namespace testing {
      * @param rhs The second item to compare.
      * @param message The error message on failure.
      */
-    template<typename obj_t>
+    export template<typename obj_t>
     void assert_gt(const obj_t& lhs, const obj_t& rhs, const std::string& message) {
         if (!(lhs > rhs)) throw std::runtime_error(message);
     }
@@ -211,7 +213,7 @@ namespace testing {
      * @param cond The condition to test.
      * @param message The error message on failure.
      */
-    void assert_true(bool cond, const std::string& message) {
+    export void assert_true(bool cond, const std::string& message) {
         if (!cond) throw std::runtime_error(message);
     }
 
@@ -222,7 +224,7 @@ namespace testing {
      * @param cond The condition to test.
      * @param message The error message on failure.
      */
-    void assert_false(bool cond, const std::string& message) {
+    export void assert_false(bool cond, const std::string& message) {
         if (cond) throw std::runtime_error(message);
     }
 
@@ -234,7 +236,7 @@ namespace testing {
      * @param func The function that should through the given type of exception.
      * @param message The error message on failure.
      */
-    template<typename err_t = std::exception>
+    export template<typename err_t = std::exception>
     void assert_throws(const std::function<void()>& func, const std::string& message) {
         try {
             func();
@@ -253,7 +255,7 @@ namespace testing {
      * @param expected_message The message that the thrown exception should report.
      * @param message The error message on failure.
      */
-    template<typename err_t = std::exception>
+    export template<typename err_t = std::exception>
     void assert_throws(const std::function<void()>& func, const std::string& expected_message,
                        const std::string& message) {
         try {
@@ -264,5 +266,3 @@ namespace testing {
     }
 
 }  //  namespace testing
-
-#endif  //  TESTING_HPP

@@ -1,12 +1,20 @@
-cmake_minimum_required(VERSION 3.10)
-project(cpp_utilities)
+cmake_minimum_required(VERSION 3.28)
+project(cpp-utilities)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS_RELEASE -O3)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
-include_directories(.)
-
-add_executable(args.tests args/args.tests.cpp)
-
-add_executable(thread_queue.tests thread_queue/thread_queue.tests.cpp)
+add_executable(test.args)
+target_sources(test.args
+        PUBLIC
+        args/args.tests.cpp
+)
+target_sources(test.args
+        PUBLIC
+        FILE_SET modules TYPE CXX_MODULES FILES
+        args/args.cppm
+        testing/testing.cppm
+)
