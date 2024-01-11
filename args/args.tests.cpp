@@ -5,8 +5,7 @@
  * @brief Defines unit tests for the `util::args` class for parsing command-line arguments.
  *
  * @license MIT license (https://opensource.org/licenses/MIT).
- * @copyright (c) 2023 by Cayden Lund.
- *
+ * @copyright (c) 2024 by Cayden Lund.
  */
 
 import args;

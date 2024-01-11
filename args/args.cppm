@@ -51,8 +51,7 @@
  *            Similarly, in a call to `./exec -an=5`, `5` is the option-argument of `-n`.
  *
  * @license MIT license (https://opensource.org/licenses/MIT).
- * @copyright (c) 2023 by Cayden Lund.
- *
+ * @copyright (c) 2024 by Cayden Lund.
  */
 
 module;

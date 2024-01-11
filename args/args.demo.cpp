@@ -6,6 +6,9 @@
  *     * `-o <str>  |  --output <str>`
  *     * `-h        |  --help`
  *     * `-v`
+ *
+ * @license MIT license (https://opensource.org/licenses/MIT).
+ * @copyright (c) 2024 by Cayden Lund.
  */
 
 import args;
