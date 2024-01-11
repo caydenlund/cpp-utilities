@@ -1,4 +1,4 @@
-# `testing`: A simple unit test suite
+# `testing`: A simple unit test suite ![Status: ready for use](https://img.shields.io/badge/Status-Ready_for_use-green?style=flat&labelColor=%232c3e50&color=%2327ae60)
 
 Existing unit testing suites can be a hassle to set up,
 especially when portability is a concern.
